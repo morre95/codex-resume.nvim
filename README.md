@@ -11,17 +11,27 @@ A lightweight Neovim companion for the [OpenAI Codex CLI](https://github.com/ope
 ### lazy.nvim
 ```lua
 {
-  "your-name/codex-resume.nvim",
-  config = function()
-    require("codex").setup()
-  end,
+  "morre95/codex-resume.nvim",
+  cmd = { "CodexResume", "CodexResumeLast", "CodexResumeId" },
+  keys = {
+    { "<leader>cr", function() require("codex").resume() end, desc = "Codex: resume session" },
+    { "<leader>cR", function() require("codex").resume_last() end, desc = "Codex: resume last" },
+  },
+  opts = {
+    auto_close = true,
+    float = {
+      border = "single",
+      width = 0.9,
+      height = 0.85,
+    },
+  },
 }
 ```
 
 ### packer.nvim
 ```lua
 use {
-  "your-name/codex-resume.nvim",
+  "morre95/codex-resume.nvim",
   config = function()
     require("codex").setup()
   end,
@@ -29,11 +39,11 @@ use {
 ```
 
 ## Usage
-- `:CodexResume` — open the Codex CLI session picker inside a floating terminal.
-- `:CodexResume --last` — resume the most recent session.
-- `:CodexResume <session-id>` — resume a specific session.
-- `:CodexResume! ...` — run any variant above without a floating terminal (uses `vim.system` / `vim.fn.system`).
-- `:CodexResumeLast` and `:CodexResumeId <id>` — convenience aliases for scripted use.
+- `:CodexResume` - open the Codex CLI session picker inside a floating terminal.
+- `:CodexResume --last` - resume the most recent session.
+- `:CodexResume <session-id>` - resume a specific session.
+- `:CodexResume! ...` - run any variant above without a floating terminal (uses `vim.system` / `vim.fn.system`).
+- `:CodexResumeLast` and `:CodexResumeId <id>` - convenience aliases for scripted use.
 
 The floating terminal closes automatically when the resume command exits successfully. Set `auto_close = false` if you need to inspect the CLI output afterwards.
 
