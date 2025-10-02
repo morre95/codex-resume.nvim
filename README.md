@@ -50,12 +50,12 @@ The floating terminal closes automatically when the resume command exits success
 ## Configuration
 ```lua
 require("codex").setup {
-  cmd = "codex",             -- override when the CLI binary lives elsewhere
-  auto_close = true,          -- close the floating window after a successful run
+  cmd = "codex",        -- override when the CLI binary lives elsewhere
+  auto_close = true,    -- close the floating window after a successful run
   float = {
-    border = "rounded",      -- any `nvim_open_win` border value
-    width = 0.85,             -- fraction of the editor width or absolute columns
-    height = 0.8,             -- fraction of the editor height or absolute rows
+    border = "rounded", -- any `nvim_open_win` border value
+    width = 0.85,       -- fraction of the editor width or absolute columns
+    height = 0.8,       -- fraction of the editor height or absolute rows
   },
 }
 ```
