@@ -8,9 +8,9 @@ A lightweight Neovim companion for the [OpenAI Codex CLI](https://github.com/ope
 
 ## Installation
 
-### lazy.nvim
+### Use your plugin manager, e.g. lazy.nvim
 ```lua
-{
+return {
   "morre95/codex-resume.nvim",
   cmd = { "CodexResume", "CodexResumeLast", "CodexResumeId" },
   keys = {
