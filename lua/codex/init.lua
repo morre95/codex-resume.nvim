@@ -1,6 +1,6 @@
 local M = {}
 
--- Default plugin configuration; values are duplicated via deepcopy to avoid shared tables.
+-- Default plugin configuration; cloned via deepcopy so callers cannot mutate shared state.
 local default_config = {
   cmd = "codex",
   float = {
@@ -17,8 +17,8 @@ local function deepcopy(value)
   end
 
   local result = {}
-  for k, v in pairs(value) do
-    result[k] = deepcopy(v)
+  for key, inner in pairs(value) do
+    result[key] = deepcopy(inner)
   end
   return result
 end
@@ -29,7 +29,6 @@ local function merge_configs(base, override)
   if type(base) ~= "table" then
     return deepcopy(override)
   end
-
   if type(override) ~= "table" then
     if override == nil then
       return deepcopy(base)
@@ -37,44 +36,43 @@ local function merge_configs(base, override)
     return deepcopy(override)
   end
 
-  local result = {}
+  local merged = {}
 
-  for k, v in pairs(base) do
-    result[k] = deepcopy(v)
+  for key, value in pairs(base) do
+    merged[key] = deepcopy(value)
   end
-
-  for k, v in pairs(override) do
-    if type(v) == "table" and type(result[k]) == "table" then
-      result[k] = merge_configs(result[k], v)
+  for key, value in pairs(override) do
+    if type(value) == "table" and type(merged[key]) == "table" then
+      merged[key] = merge_configs(merged[key], value)
     else
-      result[k] = deepcopy(v)
+      merged[key] = deepcopy(value)
     end
   end
 
-  return result
+  return merged
 end
 
 local function float_dimensions()
-  local columns = vim.o.columns
-  local lines = vim.o.lines - vim.o.cmdheight
+  local total_cols = vim.o.columns
+  local total_lines = vim.o.lines - vim.o.cmdheight
 
   local width = config.float.width
   local height = config.float.height
 
   if width > 0 and width < 1 then
-    width = math.floor(columns * width)
+    width = math.floor(total_cols * width)
   else
-    width = math.min(columns, math.floor(width))
+    width = math.min(total_cols, math.floor(width))
   end
 
   if height > 0 and height < 1 then
-    height = math.floor(lines * height)
+    height = math.floor(total_lines * height)
   else
-    height = math.min(lines, math.floor(height))
+    height = math.min(total_lines, math.floor(height))
   end
 
-  local row = math.floor((lines - height) / 2)
-  local col = math.floor((columns - width) / 2)
+  local row = math.floor((total_lines - height) / 2)
+  local col = math.floor((total_cols - width) / 2)
 
   return width, height, row, col
 end
@@ -83,7 +81,6 @@ local function close_float(win, buf)
   if win and vim.api.nvim_win_is_valid(win) then
     vim.api.nvim_win_close(win, true)
   end
-
   if buf and vim.api.nvim_buf_is_valid(buf) then
     vim.api.nvim_buf_delete(buf, { force = true })
   end
@@ -116,9 +113,8 @@ local function open_term(args, opts)
   })
 
   set_buf_option(buf, "filetype", "codex_session")
-  set_buf_option(buf, "buftype", "terminal")
 
-  local function on_exit(_, code, _)
+  local function on_exit(_, code)
     if config.auto_close and code == 0 then
       close_float(win, buf)
     elseif not config.auto_close then
