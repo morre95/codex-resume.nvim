@@ -1,5 +1,6 @@
 local M = {}
 
+-- Default plugin configuration; values are duplicated via deepcopy to avoid shared tables.
 local default_config = {
   cmd = "codex",
   float = {
@@ -14,6 +15,7 @@ local function deepcopy(value)
   if type(value) ~= "table" then
     return value
   end
+
   local result = {}
   for k, v in pairs(value) do
     result[k] = deepcopy(v)
@@ -27,16 +29,20 @@ local function merge_configs(base, override)
   if type(base) ~= "table" then
     return deepcopy(override)
   end
+
   if type(override) ~= "table" then
     if override == nil then
       return deepcopy(base)
     end
     return deepcopy(override)
   end
+
   local result = {}
+
   for k, v in pairs(base) do
     result[k] = deepcopy(v)
   end
+
   for k, v in pairs(override) do
     if type(v) == "table" and type(result[k]) == "table" then
       result[k] = merge_configs(result[k], v)
@@ -44,14 +50,16 @@ local function merge_configs(base, override)
       result[k] = deepcopy(v)
     end
   end
+
   return result
 end
 
 local function float_dimensions()
-  local width = config.float.width
-  local height = config.float.height
   local columns = vim.o.columns
   local lines = vim.o.lines - vim.o.cmdheight
+
+  local width = config.float.width
+  local height = config.float.height
 
   if width > 0 and width < 1 then
     width = math.floor(columns * width)
@@ -75,6 +83,7 @@ local function close_float(win, buf)
   if win and vim.api.nvim_win_is_valid(win) then
     vim.api.nvim_win_close(win, true)
   end
+
   if buf and vim.api.nvim_buf_is_valid(buf) then
     vim.api.nvim_buf_delete(buf, { force = true })
   end
@@ -82,8 +91,10 @@ end
 
 local function open_term(args, opts)
   opts = opts or {}
+
   local buf = vim.api.nvim_create_buf(false, true)
   local width, height, row, col = float_dimensions()
+
   local win = vim.api.nvim_open_win(buf, true, {
     relative = "editor",
     style = "minimal",
@@ -94,7 +105,7 @@ local function open_term(args, opts)
     col = col,
   })
 
-  vim.api.nvim_buf_set_option(buf, "filetype", "codex-session")
+  vim.api.nvim_buf_set_option(buf, "filetype", "codex_session")
   vim.api.nvim_buf_set_option(buf, "buftype", "terminal")
 
   local function on_exit(_, code, _)
@@ -107,6 +118,7 @@ local function open_term(args, opts)
         end
       end)
     end
+
     if opts.on_exit then
       opts.on_exit(code)
     end
@@ -120,7 +132,10 @@ local function open_term(args, opts)
 
   if job <= 0 then
     close_float(win, buf)
-    vim.notify("codex.nvim: failed to start `" .. table.concat(args, " ") .. "`", vim.log.levels.ERROR)
+    vim.notify(
+      "codex.nvim: failed to start `" .. table.concat(args, " ") .. "`",
+      vim.log.levels.ERROR
+    )
     return
   end
 
@@ -139,37 +154,44 @@ end
 
 local function run_system(args, opts)
   opts = opts or {}
+
   if vim.system then
     local task = vim.system(args, { text = true, cwd = opts.cwd, env = opts.env })
     local result = task:wait()
+
     if result.code ~= 0 then
       vim.notify("codex.nvim: command failed: " .. (result.stderr or ""), vim.log.levels.ERROR)
     elseif result.stdout and #result.stdout > 0 then
       vim.notify(result.stdout, vim.log.levels.INFO)
     end
+
     return result
-  else
-    local output = vim.fn.system(args)
-    local status = vim.v.shell_error
-    if status ~= 0 then
-      vim.notify("codex.nvim: command failed: " .. output, vim.log.levels.ERROR)
-    elseif output and #output > 0 then
-      vim.notify(output, vim.log.levels.INFO)
-    end
-    return {
-      code = status,
-      stdout = output,
-    }
   end
+
+  local output = vim.fn.system(args)
+  local status = vim.v.shell_error
+
+  if status ~= 0 then
+    vim.notify("codex.nvim: command failed: " .. output, vim.log.levels.ERROR)
+  elseif output and #output > 0 then
+    vim.notify(output, vim.log.levels.INFO)
+  end
+
+  return {
+    code = status,
+    stdout = output,
+  }
 end
 
 local function build_command(extra)
   local cmd = { config.cmd, "resume" }
+
   if extra then
     for _, item in ipairs(extra) do
       table.insert(cmd, item)
     end
   end
+
   return cmd
 end
 
@@ -179,19 +201,23 @@ end
 
 function M.resume(opts)
   opts = opts or {}
+
   local args = build_command(opts.args)
   if opts.interactive == false then
     return run_system(args, opts)
   end
+
   return open_term(args, opts)
 end
 
 function M.resume_last(opts)
   opts = opts or {}
   opts.args = { "--last" }
+
   if opts.interactive == nil then
     opts.interactive = true
   end
+
   return M.resume(opts)
 end
 
@@ -200,11 +226,14 @@ function M.resume_by_id(id, opts)
     vim.notify("codex.nvim: resume_by_id requires an id", vim.log.levels.ERROR)
     return
   end
+
   opts = opts or {}
   opts.args = { id }
+
   if opts.interactive == nil then
     opts.interactive = true
   end
+
   return M.resume(opts)
 end
 
