@@ -89,6 +89,16 @@ local function close_float(win, buf)
   end
 end
 
+local function set_buf_option(buf, name, value)
+  local ok, err = pcall(vim.api.nvim_buf_set_option, buf, name, value)
+  if not ok then
+    vim.notify(
+      string.format("codex.nvim: failed to set %s: %s", name, err),
+      vim.log.levels.WARN
+    )
+  end
+end
+
 local function open_term(args, opts)
   opts = opts or {}
 
@@ -105,8 +115,8 @@ local function open_term(args, opts)
     col = col,
   })
 
-  vim.api.nvim_buf_set_option(buf, "filetype", "codex_session")
-  vim.api.nvim_buf_set_option(buf, "buftype", "terminal")
+  set_buf_option(buf, "filetype", "codex_session")
+  set_buf_option(buf, "buftype", "terminal")
 
   local function on_exit(_, code, _)
     if config.auto_close and code == 0 then
